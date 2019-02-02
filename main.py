@@ -18,21 +18,21 @@ from sklearn.model_selection import train_test_split, cross_val_score, ShuffleSp
 # Kauhan branch
 
 test_size = 0.2
-n_splits = 10
+n_splits = 5
 
 data,le = surface_loader(test_size,n_splits)
 
-print("keys:",len(data))
+# print("keys:",len(data))
 
-for i in data:
-    print("{} shape: {}".format(i,data[i].shape))
+# for i in data:
+#     print("{} shape: {}".format(i,data[i].shape))
 
-    for j in data[i]:
-        if np.array_equal(data[i].shape,np.array([n_splits,])):
-            print(j.shape)
+#     for j in data[i]:
+#         if np.array_equal(data[i].shape,np.array([n_splits,])):
+#             print(j.shape)
 
-print(np.unique(data['y_train']))
-print(le.inverse_transform(np.unique(data['y_train'])))
+# print(np.unique(data['y_train']))
+# print(le.inverse_transform(np.unique(data['y_train'])))
 
 X_train_s = data['X_train_s']
 y_train_s = data['y_train_s']
@@ -40,40 +40,74 @@ y_train_s = data['y_train_s']
 X_test_s = data['X_test_s']
 y_test_s = data['y_test_s']
 
-# cv = ShuffleSplit(n_splits=6, test_size=test_size, random_state=0)
+classifiers = [
+    ["KNN", np.arange(1, 11).tolist()],
+    ["LDA",[1]],
+    ["SVC", [1]],
+    ["LR", [1]],
+    ["RandomForest", np.arange(10, 201, 10).tolist()],
+    ["ExtraTree", np.arange(10, 201, 10).tolist()],
+    ["AdaBoost", np.arange(10, 201, 10).tolist()],
+    ["GradientBoost", np.arange(10, 201, 10).tolist()]
+]
 
-for s in range(n_splits):
-    print("Progressing split {}/{}".format(s+1,n_splits))
+count = 0
+N = len(classifiers)
 
-    X = X_train_s[s]
-    N,x,y = X.shape
-    X = X.reshape((N,x*y))
+for classifier in classifiers:
+    count += 1
+    name = classifier[0]
+    parameters = classifier[1]
 
-    X_t = X_test_s[s]
-    N_t,x,y = X_t.shape
-    X_t = X_t.reshape((N_t,x*y))
+    print("Progressing classifier {}/{}: {}".format(count,N,name))
 
-    y = y_train_s[s]    
-    y_t = y_test_s[s]
+    for p in parameters:
+        print("Progressing parameter {}/{}".format(p,len(parameters)))
 
-    scores = []
+        if name == "KNN":
+            clf = KNN(n_neighbors=p)
+        elif name == "LDA":
+            clf = LDA()
+        elif name == "SVC":
+            clf = SVC()
+        elif name == "LR":
+            clf = LR()
+        elif name == "RandomForest":
+            clf = RFC(n_estimators=p)
+        elif name == "ExtraTree":
+            clf = EFC(n_estimators=p)
+        elif name == "AdaBoost":
+            clf = ABC(n_estimators=p)
+        elif name == "GradientBoost":
+            clf = GBC(n_estimators=p)
 
-    printProgressBar(1,10,
-    prefix="Progressing parameters {}/{}".format(1,10),
-    suffix='Complete',length=50)
+        printProgressBar(1, n_splits,
+                         prefix="Progressing splits {}/{}".format(1, n_splits),
+                         suffix='Complete', length=50)
 
-    for parameter in range(10):
-        printProgressBar(parameter+1,10,
-        prefix="Progressing parameters {}/{}".format(parameter+1,10),
-        suffix='Complete',length=50)
+        scores = []
+
+        for s in range(n_splits):
+            printProgressBar(s+1, n_splits,
+                            prefix="Progressing splits {}/{}".format(
+                                s+1, n_splits),
+                            suffix='Complete', length=50)
+            
+            X = X_train_s[s]
+            N, x, y = X.shape
+            X = X.reshape((N, x*y))
+
+            X_t = X_test_s[s]
+            N_t, x, y = X_t.shape
+            X_t = X_t.reshape((N_t, x*y))
+
+            y = y_train_s[s]
+            y_t = y_test_s[s]
+            
+            clf.fit(X,y)
+            score = clf.score(X_t,y_t)
+            scores.append(score)
+
+        scores = np.array(scores)
         
-        n_estimators = 25*parameter + 25
-        clf = RFC(n_estimators=n_estimators)
-        
-        clf.fit(X,y)
-        score = clf.score(X_t,y_t)
-        scores.append(score)
-
-    scores = np.array(scores)
-    
-    print("Accuracy: %0.2f (+/- %0.2f)\n" % (scores.mean(), scores.std() * 2))
+        print("Accuracy: %0.2f (+/- %0.2f)\n" % (scores.mean(), scores.std() * 2))
