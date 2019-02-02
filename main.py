@@ -15,6 +15,11 @@ from sklearn.ensemble import GradientBoostingClassifier as GBC
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split, cross_val_score, ShuffleSplit
 
+def warn(*args, **kwargs):
+    pass
+import warnings
+warnings.warn = warn
+
 # Kauhan branch
 
 test_size = 0.2
