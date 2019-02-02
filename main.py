@@ -50,24 +50,27 @@ classifiers = [
     ["LDA",[1]],
     ["SVC", [1]],
     ["LR", [1]],
-    ["RandomForest", np.arange(10, 201, 10).tolist()],
-    ["ExtraTree", np.arange(10, 201, 10).tolist()],
-    ["AdaBoost", np.arange(10, 201, 10).tolist()],
-    ["GradientBoost", np.arange(10, 201, 10).tolist()]
+    ["RandomForest", np.arange(50, 201, 50).tolist()],
+    ["ExtraTree", np.arange(50, 201, 50).tolist()],
+    ["AdaBoost", np.arange(50, 201, 50).tolist()],
+    ["GradientBoost", np.arange(50, 201, 50).tolist()]
 ]
 
 count = 0
-N = len(classifiers)
+luokittimia = len(classifiers)
 
 for classifier in classifiers:
     count += 1
     name = classifier[0]
     parameters = classifier[1]
 
-    print("Progressing classifier {}/{}: {}".format(count,N,name))
+    print("- "*50)
+    print("\nProgressing classifier {}/{}: {}\n".format(count,luokittimia,name))
 
+    p_iter = 0
     for p in parameters:
-        print("Progressing parameter {}/{}".format(p,len(parameters)))
+        p_iter += 1
+        print("Progressing parameter {}/{}".format(p_iter,len(parameters)))
 
         if name == "KNN":
             clf = KNN(n_neighbors=p)
@@ -86,18 +89,13 @@ for classifier in classifiers:
         elif name == "GradientBoost":
             clf = GBC(n_estimators=p)
 
-        printProgressBar(1, n_splits,
-                         prefix="Progressing splits {}/{}".format(1, n_splits),
+        printProgressBar(0, n_splits,
+                         prefix="Progressed splits {}/{}".format(0, n_splits),
                          suffix='Complete', length=50)
 
         scores = []
 
-        for s in range(n_splits):
-            printProgressBar(s+1, n_splits,
-                            prefix="Progressing splits {}/{}".format(
-                                s+1, n_splits),
-                            suffix='Complete', length=50)
-            
+        for s in range(n_splits):         
             X = X_train_s[s]
             N, x, y = X.shape
             X = X.reshape((N, x*y))
@@ -112,6 +110,11 @@ for classifier in classifiers:
             clf.fit(X,y)
             score = clf.score(X_t,y_t)
             scores.append(score)
+
+            printProgressBar(s+1, n_splits,
+                             prefix="Progressed splits {}/{}".format(
+                                 s+1, n_splits),
+                             suffix='Complete', length=50)
 
         scores = np.array(scores)
         
