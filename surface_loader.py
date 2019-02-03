@@ -4,17 +4,29 @@
 
 import glob
 import os
-from numpy import load, loadtxt, arange, array, asarray
+from numpy import load, loadtxt, arange, array, asarray, zeros
 from progressBar import printProgressBar
+
+from squaternion import quat2euler
 
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split, ShuffleSplit
 
-def surface_loader(test_size=None,n_splits=5,folder='robotsurface'+os.sep):
+def surface_loader(test_size=None,n_splits=5,folder='robotsurface'+os.sep,euler=False):
     X_train = load(folder+'X_train_kaggle.npy')
     X_test = load(folder+'X_test_kaggle.npy')
     y_train = loadtxt(folder+'y_train_final_kaggle.csv',
                       delimiter=',',usecols=(1),dtype='str')
+
+
+    if euler:
+        X_train_eulers = zeros((1703, 3, 128))
+        for i in range(1703):
+            for j in range(128):
+                X_train_eulers[i, :, j] = quat2euler(
+                    X_train[i, 4, j], X_train[i, 0, j], X_train[i, 1, j], X_train[i, 2, j], degrees=True)
+
+        X_train = X_train_eulers
 
     le = LabelEncoder()
     le.fit(y_train)
