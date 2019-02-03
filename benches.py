@@ -3,6 +3,8 @@ import time
 
 import numpy as np
 
+from math import ceil
+
 from sklearn.neighbors import KNeighborsClassifier as KNN
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 from sklearn.svm import SVC
@@ -17,57 +19,96 @@ from sklearn.ensemble import GradientBoostingClassifier as GBC
 from sklearn.model_selection import ShuffleSplit, cross_val_score
 
 
-def benchmark(clf, n_splits, channels, X, y, X_t=None, y_t=None, test_size=None):
+def benchmark(clf, n_splits, X, y, X_t=None, y_t=None, splitted=False, test_size=None):
+    start = time.localtime()
+    s_t = []
+    
+    for i in range(3,6):
+        if start[i] < 10:
+            a = "0" + str(start[i])
+        else:
+            a = str(start[i])
+        s_t.append(a)
+
+    print(f"Start time: {s_t[0]}:{s_t[1]}:{s_t[2]}")
+
     start = time.time()
 
-    if test_size == None:
-        printProgressBar(0, channels,
-                         prefix=f"Progressing channel 1/{channels}",
-                         suffix="Complete", length=50)
-        
-        ch_scores = []
+    if splitted:
+        channels = X[0].shape[1]
+    
+    else:
+        channels = X.shape[1]
+        cv = ShuffleSplit(n_splits=n_splits,
+                          test_size=test_size, random_state=0)
 
-        for c in range(channels):
-            printProgressBar(c+1, channels,
-                                 prefix=f"Progressing channel {c+1}/{channels}",
-                                 suffix="Complete", length=50)
-            scores = []
+    printProgressBar(0, channels+1,
+                     prefix=f"Progressing channel 1/{channels+1}",
+                     suffix="Complete", length=50)
+
+    ch_scores = []
+
+    for c in range(channels+1):
+        printProgressBar(c+1, channels+1,
+                            prefix=f"Progressing channel {c+1}/{channels+1}",
+                            suffix="Complete", length=50)
+        scores = []
+
+        if splitted:
             for s in range(n_splits):
-                X_c = X[s][:, c, :]
-                X_t_c = X_t[s][:, c, :]
+                if c != channels:
+                    X_train = X[s][:,c,:]
+                    X_test = X_t[s][:,c,:]
+                else:
+                    N, a, b = X[s].shape
+                    X_train = X[s].reshape((N, a*b))
 
-                y_c = y[s]
-                y_t_c = y_t[s]
+                    N, a, b = X_t[s].shape
+                    X_test = X_t[s].reshape((N, a*b))
+                
+                y_train = y[s]
+                y_test = y_t[s]
 
-                clf.fit(X_c, y_c)
-                score = clf.score(X_t_c, y_t_c)
+                clf.fit(X_train, y_train)
+                score = clf.score(X_test, y_test)
 
                 scores.append(score)
+
             scores = np.array(scores)
-            ch_scores.append(scores)
         
-        end = time.time()
+        else:
+            if c != channels:
+                X_channel = X[:,c,:]
+            else:
+                N,a,b = X.shape
+                X_channel = X.reshape((N,a*b))
+            
+            scores = cross_val_score(clf, X_channel, y, cv=cv)
 
-        duration = end - start
+        ch_scores.append(scores)
+
+    end = time.time()
+
+    duration = end - start
+
+    print(f"Duration: {duration:.3f}s")
+
+    ch = 0
+    for result in ch_scores:
+        ch += 1
         
-        print(f"Duration: {duration:.3f} s")
+        if ch != channels+1:
+            ch_str = f"Channel {ch}"
+        else:
+            ch_str = "All channels"
 
-        ch = 0
-        for result in ch_scores:
-            ch += 1
-            print(f"Channel {ch} accuracy: {100*result.mean():.3f} % (+/- {100*result.std()*2:.3f} %)")
+        mean = 100*result.mean()
+        dev = 100*result.std()*2
 
-    else:
-        N, a, b = X.shape
+        acc = f"{ch_str} accuracy: {mean:.3f} % (+/- {dev:.3f} %)"
 
-        X = X.reshape((N,a*b))
+        dev_bar = ceil(dev/5)*"○"
+        bar = (round(mean.item()/5))*"■"
+        bar = bar + (20-len(bar))*"□"
         
-        cv = ShuffleSplit(n_splits=n_splits, test_size=test_size, random_state=0)
-        ch_scores = cross_val_score(clf,X,y,cv=cv)
-
-        end = time.time()
-
-        duration = end - start
-
-        print(f"Duration: {duration:.3f} s")
-        print(f"Accuracy: {100*ch_scores.mean():.3f} % (+/- {100*ch_scores.std()*2:.3f} %)")
+        print(f"{acc:50} {bar:25} {dev_bar}")

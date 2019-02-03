@@ -1,16 +1,22 @@
 import warnings
+def warn(*args, **kwargs):
+    pass
+warnings.warn = warn
+
 from surface_loader import surface_loader
 from progressBar import printProgressBar
 from benches import benchmark
 
 import time
 
+from math import floor
+
 import numpy as np
 
 from sklearn.neighbors import KNeighborsClassifier as KNN
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 from sklearn.svm import SVC
-from sklearn.linear_model import LogisticRegression as LR
+from sklearn.linear_model import LogisticRegression as LGR
 from sklearn.linear_model import SGDClassifier as SGD
 
 from sklearn.ensemble import RandomForestClassifier as RFC
@@ -18,17 +24,10 @@ from sklearn.ensemble import ExtraTreesClassifier as EFC
 from sklearn.ensemble import AdaBoostClassifier as ABC
 from sklearn.ensemble import GradientBoostingClassifier as GBC
 
-
-def warn(*args, **kwargs):
-    pass
-
-
-warnings.warn = warn
-
 # Kauhan branch
 
 test_size = 0.2
-n_splits = 5
+n_splits = 10
 
 data, le = surface_loader(test_size, n_splits, euler=True)
 
@@ -64,7 +63,7 @@ classifiers = [
     ["k Nearest Neighbors", np.arange(1, 11).tolist()],
     ["Linear Discriminant Analysis", [1]],
     ["Support Vector Classification", [1]],
-    ["Logistic Regression", [1]],
+    ["Logistic Regression", ['newton-cg','lbfgs','liblinear','sag','saga']],
     ["Stochastic Gradient Descent", ['hinge', 'log', 'modified_huber', 'squared_hinge', 'perceptron',
                                      'squared_loss', 'huber', 'epsilon_insensitive', 'squared_epsilon_insensitive']],
     ["Random Forest", np.arange(50, 201, 50).tolist()],
@@ -89,36 +88,62 @@ for classifier in classifiers:
 
     p_iter = 0
     for p in parameters:
+        l = floor((100-len(str(p))-28)/4)
         p_iter += 1
-        print(f"\nProgressing parameter {p_iter}/{len(parameters)}: {p}\n")
+        print()
+        print(f"Progressing parameter {p_iter}/{len(parameters)}: {p}",
+              "▬▬" * 2*l,
+              "\n")
 
         if name == "k Nearest Neighbors":
+            # print("S K I P P I N G")
+            # continue
             clf = KNN(n_neighbors=p)
+
         elif name == "Linear Discriminant Analysis":
+            # print("S K I P P I N G")
+            # continue
             clf = LDA()
+
         elif name == "Support Vector Classification":
+            # print("S K I P P I N G")
+            # continue
             clf = SVC()
+
         elif name == "Logistic Regression":
-            print(20*"-", "S K I P P I N G", 20*"-")
+            print("S K I P P I N G")
             continue
-            clf = LR()
+            clf = LGR()
+
         elif name == "Stochastic Gradient Descent":
-            print(20*"-", "S K I P P I N G", 20*"-")
-            continue
+            # print("S K I P P I N G")
+            # continue
             clf = SGD(loss=p)
+
         elif name == "Random Forest":
+            # print("S K I P P I N G")
+            # continue
             clf = RFC(n_estimators=p)
+
         elif name == "Extra Tree":
+            # print("S K I P P I N G")
+            # continue
             clf = EFC(n_estimators=p)
+
         elif name == "AdaBoost":
-            print(20*"-", "S K I P P I N G", 20*"-")
+            print("S K I P P I N G")
             continue
             clf = ABC(n_estimators=p)
+
         elif name == "Gradient Boosting Classifer":
-            print(20*"-", "S K I P P I N G", 20*"-")
-            continue
+            print("S K I P P I N G")
+            break
             clf = GBC(n_estimators=p)
 
-        # benchmark(clf, n_splits, channels, X=X_train, y=y_train, test_size=test_size) # All channels
-        benchmark(clf, n_splits, channels, X_train_s, y_train_s,
-                  X_test_s, y_test_s)  # Channel by channel
+        print(clf)
+        print()
+        print("All data")
+        benchmark(clf, n_splits, X=X_train, y=y_train, test_size=test_size) # Whole data
+        
+        print("\nSplitted data")
+        benchmark(clf, n_splits, X_train_s, y_train_s, X_test_s, y_test_s, splitted=True)  # Channel by channel

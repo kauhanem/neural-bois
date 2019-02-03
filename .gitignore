@@ -1,5 +1,6 @@
 # Omat ignoret ->
 omia_ajoja.py
+split*.csv
 
 # Templaten ignoret tästä eteenpäin ->
 # Byte-compiled / optimized / DLL files

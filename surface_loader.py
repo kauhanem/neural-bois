@@ -2,10 +2,13 @@
 # Group: TUT_Group_7
 # Authors: Jani Björklund, Matius Hurskainen, Mikko Kauhanen, Samu Lampinen
 
+
 import glob
 import os
-from numpy import load, loadtxt, arange, array, asarray, zeros
+from numpy import load, loadtxt, arange, array, asarray, zeros, nan, arange, genfromtxt, savetxt
 from progressBar import printProgressBar
+
+import pandas as pd
 
 from squaternion import quat2euler
 
@@ -44,9 +47,11 @@ def surface_loader(test_size=None,n_splits=5,folder='robotsurface'+os.sep,euler=
         y_train_s = []
         y_test_s = []
 
-        groups = loadtxt(folder+'groups.csv',
-                         delimiter=',',usecols=(1),dtype='int')
+        #groups = loadtxt(folder+'groups.csv',
+                        #  delimiter=',',usecols=(1),dtype='int')
         
+        groups = genfromtxt(folder+'groups.csv',delimiter=',',dtype=None)
+
         rs = ShuffleSplit(n_splits=n_splits,
         test_size=test_size,random_state=0)
         
@@ -70,17 +75,29 @@ def surface_loader(test_size=None,n_splits=5,folder='robotsurface'+os.sep,euler=
             prefix="Progressing sample {}/{}".format(1,N),
             suffix='Complete',length=50)
 
+            split_txt = []
+
             for i in range(N):
                 printProgressBar(i,N-1,
                 prefix="Progressing sample {}/{}".format(i+1,N),
                 suffix='Complete',length=50)
 
-                if groups[i] in train_index:
+                if groups[i][1] in train_index:
+                    testi_str = f"{groups[i][0]},{groups[i][1]},{groups[i][2]},{0}"
+                    split_txt.append(testi_str.split(','))
+
                     X_train_split.append(X_train[i,:,:])
                     y_train_split.append(y_train[i])
                 else:
+                    testi_str = f"{groups[i][0]},{groups[i][1]},{groups[i][2]},{1}"
+                    split_txt.append(testi_str.split(','))
+
+
                     X_test_split.append(X_train[i,:,:])
                     y_test_split.append(y_train[i])
+
+            split_txt = asarray(split_txt)
+            pd.DataFrame(split_txt).to_csv(f"split{split}.csv")
             
             X_train_s.append(asarray(X_train_split))
             y_train_s.append(asarray(y_train_split))
