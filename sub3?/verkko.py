@@ -42,9 +42,9 @@ def model_1D_definition():
 
     array_size = (384, 1)
 
-    filters = 16
-    filters2 = 16
-    kernel_size = 16
+    filters = 9
+    filters2 = 9
+    kernel_size = 9
 
     model.add(Conv1D(filters, kernel_size, activation='relu', input_shape = array_size, kernel_regularizer=l2(0.01)))
     model.add(MaxPooling1D())
