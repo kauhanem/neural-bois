@@ -6,7 +6,9 @@ import numpy as np
 
 
 classes = 9
+data_dimensions = 6     # <------------ Change here the number of sensor channels
 
+# Parameter for training a 2D classification network
 def model_2D_definition():
     # Setup model
     model = Sequential()
@@ -37,14 +39,17 @@ def model_2D_definition():
 
     return model
 
+
+
+# Parameter for training a 1D classification network
 def model_1D_definition():
     model = Sequential()
 
-    array_size = (384, 1)
+    array_size = (128*data_dimensions, 1)       # Euler orientation data + angular velocity data + xy-position data
 
-    filters = 16
-    filters2 = 16
-    kernel_size = 16
+    filters = 25
+    filters2 = 25
+    kernel_size = 32
 
     model.add(Conv1D(filters, kernel_size, activation='relu', input_shape = array_size, kernel_regularizer=l2(0.01)))
     model.add(MaxPooling1D())
