@@ -2,8 +2,6 @@
 # Group: TUT_Group_7
 # Authors: Jani Björklund, Matius Hurskainen, Mikko Kauhanen, Samu Lampinen
 
-
-import glob
 import os
 from numpy import load, loadtxt, arange, array, asarray, zeros, nan, arange, genfromtxt, savetxt
 from progressBar import printProgressBar

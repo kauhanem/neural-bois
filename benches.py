@@ -3,8 +3,6 @@ import time
 
 import numpy as np
 
-from math import ceil
-
 from sklearn.neighbors import KNeighborsClassifier as KNN
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 from sklearn.svm import SVC
@@ -91,7 +89,16 @@ def benchmark(clf, n_splits, X, y, X_t=None, y_t=None, splitted=False, test_size
 
     duration = end - start
 
-    print(f"Duration: {duration:.3f}s")
+    if duration >= 60:
+        secs = duration % 60
+        mins = (duration - secs) / 60
+
+        duration = f"{mins:.0f}m {secs:.2f}s"
+    
+    else:
+        duration = f"{duration:.2f}s"
+
+    print(f"Duration: {duration}")
 
     ch = 0
     for result in ch_scores:
@@ -107,8 +114,8 @@ def benchmark(clf, n_splits, X, y, X_t=None, y_t=None, splitted=False, test_size
 
         acc = f"{ch_str} accuracy: {mean:.3f} % (+/- {dev:.3f} %)"
 
-        dev_bar = ceil(dev/5)*"○"
-        bar = (round(mean.item()/5))*"■"
+        dev_bar = round(dev.item()/2.5)*"○"
+        bar = round(mean.item()/5)*"■"
         bar = bar + (20-len(bar))*"□"
         
         print(f"{acc:50} {bar:25} {dev_bar}")
