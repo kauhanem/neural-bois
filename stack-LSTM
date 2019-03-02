@@ -1,0 +1,95 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Mar  2 17:12:11 2019
+
+@author: slamp
+"""
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import StratifiedKFold
+from sklearn.metrics import f1_score, accuracy_score
+from sklearn.preprocessing import LabelEncoder
+from keras.models import Model
+from keras.models import Sequential
+from keras.utils import to_categorical
+from keras.layers import Input
+from keras.optimizers import SGD
+from keras.layers import LSTM, Dense, Activation, Dropout
+from keras import regularizers
+import numpy as np
+
+
+def loadFiles():
+    X_train = np.load("./robotsurface/X_train_kaggle.npy")
+    X_test = np.load("./robotsurface/X_test_kaggle.npy")
+    
+    y_train = np.loadtxt('./robotsurface/y_train_final_kaggle.csv', 
+                         delimiter=',',usecols=(1),dtype='str')
+    
+    le = LabelEncoder()
+    le.fit(y_train)
+    y_train = le.transform(y_train)
+    
+    return X_train, X_test, y_train
+
+
+def main():
+    
+    X_train, realTest, y_train = loadFiles()
+   
+    
+    print("ORIGINAL DATA")
+    print("shape of X: {}".format(np.shape(X_train)))
+    print("shape of y: {}".format(np.shape(y_train)))
+    
+    X = X_train
+    y = y_train
+    y = to_categorical(y)
+    
+    X_train, X_test, y_train, y_test = train_test_split( X, y, test_size=0.33, random_state=25 )
+    
+  
+    # 10 features 128 timesteps
+    n_timesteps = 128
+    n_features = 10
+
+    model = Sequential()
+    model.add(LSTM(64, return_sequences=True, input_shape=(n_features, n_timesteps)))
+    model.add(Dropout(0.4))
+    model.add(LSTM(32, return_sequences=True))
+    model.add(Dropout(0.4))
+    model.add(LSTM(32))
+    model.add(Dropout(0.5)) #drop=3 =0.68
+                            # drop=4 =0.70 fit=82
+   # model.add(Dense(200, activation='relu'))
+    #model.add(Dropout(0.3))
+    model.add(Dense(500, activation='relu')) # 500, 0.6 = 75
+    model.add(Dropout(0.6))
+    model.add(Dense(9, activation='softmax'))
+    optimal = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+    model.compile(loss='categorical_crossentropy',
+                  optimizer=optimal,
+                  metrics=['accuracy'])
+    
+    
+    model.summary()
+    model.fit(X_train,y_train, batch_size=32, epochs=200)
+    #model.fit(X, y, batch_size=32, epochs=200)
+    
+    y_pred = model.predict(X_test)
+    y_pred = y_pred.argmax(axis =-1)
+    y_test = y_test.argmax(axis =-1)
+    
+    print(y_pred[0])
+    print(y_test[0])
+    
+    #validation
+    
+    F1= f1_score(y_test, y_pred, average = 'weighted')
+    acc= accuracy_score(y_test, y_pred)
+    print(F1)
+    print(acc)
+
+main()
+
+
+
